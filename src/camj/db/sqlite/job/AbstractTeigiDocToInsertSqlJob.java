@@ -59,7 +59,19 @@ public abstract class AbstractTeigiDocToInsertSqlJob extends AbstractFileOutputJ
 	 */
 	abstract protected void openExcelFile(Workbook workbook, String subsys);
 
+	/**
+	 * 参照する定義書のパターン名を返します。
+	 *
+	 * @return 定義書パターン名
+	 */
 	abstract protected String getFilePattern();
+
+	/**
+	 * 除外する定義書のリストを返します。
+	 *
+	 * @return 除外リスト
+	 */
+	abstract protected List<String> getIgnoreCase();
 
 	/**
 	 * {@inheritDoc}
@@ -69,7 +81,7 @@ public abstract class AbstractTeigiDocToInsertSqlJob extends AbstractFileOutputJ
 		int no = 0;
 		for (File folder : root.listFiles()) {
 			for (File file : folder.listFiles()) {
-				if (file.isFile() && file.getName().indexOf(getFilePattern()) != -1) {
+				if (file.isFile() && accept(file.getName())) {
 					final Workbook workbook = readWorkbook(file);
 					if (workbook != null) {
 						final String subsysName = getSubSystemName(file.getName());
@@ -87,6 +99,24 @@ public abstract class AbstractTeigiDocToInsertSqlJob extends AbstractFileOutputJ
 		outputFile();
 	}
 
+	/**
+	 * 検索対象の定義書か判定します。
+	 *
+	 * @return 該当の定義書の場合はtrue、該当しない場合はfalse
+	 */
+	private boolean accept(String fileName) {
+		if (fileName.indexOf(getFilePattern()) == -1 || getIgnoreCase().contains(fileName)) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * 各定義書のサブシステム区分のinsert文を返します。
+	 *
+	 * @param subsysName サブシステム名
+	 * @param subsysNo 区分連番
+	 */
 	private String getSysknInsertSql(String subsysName, String subsysNo) {
 		return String.format("insert into kubun values('%s','%s','%s');", "sys_" + getCategory(),
 				subsysNo, subsysName);
